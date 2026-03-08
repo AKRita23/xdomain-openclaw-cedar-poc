@@ -1,0 +1,87 @@
+// Cedar Entity Schema for Cross-Domain Agent TBAC
+//
+// Defines the entity types, actions, and context shape
+// used by the Cedar policy engine.
+
+namespace XDomainTBAC {
+
+    // An AI agent acting on behalf of a delegating user
+    entity Agent = {
+        "agent_name": String,
+        "delegating_user": String,
+        "badge_id": String,
+    };
+
+    // An MCP server providing tools in a specific auth domain
+    entity MCPServer = {
+        "domain": String,
+        "description": String,
+    };
+
+    // Actions that agents can perform on MCP servers
+    action "salesforce.access" appliesTo {
+        principal: [Agent],
+        resource: [MCPServer],
+        context: {
+            "badge_valid": Bool,
+            "scopes": Set<String>,
+            "badge_id": String,
+            "delegating_user": String,
+        }
+    };
+
+    action "salesforce.write" appliesTo {
+        principal: [Agent],
+        resource: [MCPServer],
+        context: {
+            "badge_valid": Bool,
+            "scopes": Set<String>,
+            "badge_id": String,
+            "delegating_user": String,
+        }
+    };
+
+    action "gcal.access" appliesTo {
+        principal: [Agent],
+        resource: [MCPServer],
+        context: {
+            "badge_valid": Bool,
+            "scopes": Set<String>,
+            "badge_id": String,
+            "delegating_user": String,
+        }
+    };
+
+    action "gcal.write" appliesTo {
+        principal: [Agent],
+        resource: [MCPServer],
+        context: {
+            "badge_valid": Bool,
+            "scopes": Set<String>,
+            "badge_id": String,
+            "delegating_user": String,
+        }
+    };
+
+    action "slack.access" appliesTo {
+        principal: [Agent],
+        resource: [MCPServer],
+        context: {
+            "badge_valid": Bool,
+            "scopes": Set<String>,
+            "badge_id": String,
+            "delegating_user": String,
+        }
+    };
+
+    action "slack.read" appliesTo {
+        principal: [Agent],
+        resource: [MCPServer],
+        context: {
+            "badge_valid": Bool,
+            "scopes": Set<String>,
+            "badge_id": String,
+            "delegating_user": String,
+        }
+    };
+}
