@@ -24,9 +24,9 @@ def _make_badge(valid=True):
 async def test_authorize_allows_valid_request(engine):
     await engine.authorize(
         principal_id="test-agent",
-        action="salesforce.access",
-        resource_domain="salesforce.com",
-        scopes=["contacts.read"],
+        action="weather.access",
+        resource_domain="api.open-meteo.com",
+        scopes=["weather:read"],
         badge=_make_badge(),
         delegating_user="sarah@example.com",
     )

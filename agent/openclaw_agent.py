@@ -1,8 +1,8 @@
 """
 OpenClaw Cross-Domain Agent — Version B (Cedar + Amazon Verified Permissions TBAC).
 
-Orchestrates task execution across Salesforce, Google Calendar, and Slack
-MCP servers on behalf of a delegating user (Sarah), using:
+Orchestrates task execution across Weather and Slack MCP servers on behalf of
+a delegating user (Sarah), using:
   - AGNTCY Identity badges for agent identity attestation
   - Okta XAA (RFC 8693) for cross-domain token exchange
   - Cedar policies evaluated by Amazon Verified Permissions for TBAC
@@ -17,8 +17,7 @@ from identity.badge_issuer import BadgeIssuer
 from identity.badge_verifier import BadgeVerifier
 from identity.okta_xaa import OktaXAAClient
 from cedar.policy_engine import CedarPolicyEngine
-from mcp_servers.salesforce_mcp import SalesforceMCPClient
-from mcp_servers.gcal_mcp import GCalMCPClient
+from mcp_servers.weather_mcp import WeatherMCPClient
 from mcp_servers.slack_mcp import SlackMCPClient
 
 logger = logging.getLogger(__name__)
@@ -52,8 +51,7 @@ class OpenClawAgent:
             aws_region=self.config.aws_region,
         )
         self.mcp_clients: Dict[str, Any] = {
-            "salesforce": SalesforceMCPClient(self.config.mcp_servers["salesforce"]),
-            "gcal": GCalMCPClient(self.config.mcp_servers["gcal"]),
+            "weather": WeatherMCPClient(self.config.mcp_servers["weather"]),
             "slack": SlackMCPClient(self.config.mcp_servers["slack"]),
         }
 
@@ -139,7 +137,7 @@ async def main():
     """Demo entry point."""
     agent = OpenClawAgent()
     result = await agent.execute_task(
-        "Look up Sarah's Salesforce contacts, check her calendar for tomorrow, "
+        "Check the weather in Austin, TX for Sarah's customer meeting "
         "and post a summary to #team-updates on Slack."
     )
     print("Task result:", result)

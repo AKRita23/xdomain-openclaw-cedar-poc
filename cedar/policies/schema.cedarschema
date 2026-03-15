@@ -19,40 +19,7 @@ namespace XDomainTBAC {
     };
 
     // Actions that agents can perform on MCP servers
-    action "salesforce.access" appliesTo {
-        principal: [Agent],
-        resource: [MCPServer],
-        context: {
-            "badge_valid": Bool,
-            "scopes": Set<String>,
-            "badge_id": String,
-            "delegating_user": String,
-        }
-    };
-
-    action "salesforce.write" appliesTo {
-        principal: [Agent],
-        resource: [MCPServer],
-        context: {
-            "badge_valid": Bool,
-            "scopes": Set<String>,
-            "badge_id": String,
-            "delegating_user": String,
-        }
-    };
-
-    action "gcal.access" appliesTo {
-        principal: [Agent],
-        resource: [MCPServer],
-        context: {
-            "badge_valid": Bool,
-            "scopes": Set<String>,
-            "badge_id": String,
-            "delegating_user": String,
-        }
-    };
-
-    action "gcal.write" appliesTo {
+    action "weather.access" appliesTo {
         principal: [Agent],
         resource: [MCPServer],
         context: {
