@@ -10,7 +10,7 @@ permit (
     resource == XDomainTBAC::MCPServer::"slack.com"
 ) when {
     context.badge_valid == true &&
-    context.scopes.contains("chat.write")
+    context.scopes.contains("slack:chat:write")
 };
 
 // Allow agents to read Slack channels
@@ -20,7 +20,7 @@ permit (
     resource == XDomainTBAC::MCPServer::"slack.com"
 ) when {
     context.badge_valid == true &&
-    context.scopes.contains("channels.read")
+    context.scopes.contains("slack:channels:read")
 };
 
 // Deny all Slack access if badge is invalid
