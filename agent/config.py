@@ -37,22 +37,16 @@ class AgentConfig:
 
     # MCP Server targets
     mcp_servers: Dict[str, MCPServerConfig] = field(default_factory=lambda: {
-        "salesforce": MCPServerConfig(
-            name="salesforce",
-            url=os.getenv("SALESFORCE_MCP_URL", "http://localhost:9001"),
-            auth_domain="salesforce.com",
-            scopes=["contacts.read", "contacts.write", "opportunities.read"],
-        ),
-        "gcal": MCPServerConfig(
-            name="gcal",
-            url=os.getenv("GCAL_MCP_URL", "http://localhost:9002"),
-            auth_domain="googleapis.com",
-            scopes=["calendar.events.read", "calendar.events.write"],
+        "weather": MCPServerConfig(
+            name="weather",
+            url=os.getenv("WEATHER_MCP_URL", ""),
+            auth_domain="api.open-meteo.com",
+            scopes=["weather:read"],
         ),
         "slack": MCPServerConfig(
             name="slack",
             url=os.getenv("SLACK_MCP_URL", "http://localhost:9003"),
             auth_domain="slack.com",
-            scopes=["chat.write", "channels.read"],
+            scopes=["slack:chat:write", "slack:channels:read"],
         ),
     })

@@ -1,41 +1,29 @@
 """Tests for MCP server client stubs."""
 import pytest
 from agent.config import MCPServerConfig
-from mcp_servers.salesforce_mcp import SalesforceMCPClient
-from mcp_servers.gcal_mcp import GCalMCPClient
+from mcp_servers.weather_mcp import WeatherMCPClient
 from mcp_servers.slack_mcp import SlackMCPClient
 
 
 @pytest.fixture
-def sf_config():
-    return MCPServerConfig(name="salesforce", url="http://localhost:9001",
-                           auth_domain="salesforce.com", scopes=["contacts.read"])
-
-
-@pytest.fixture
-def gcal_config():
-    return MCPServerConfig(name="gcal", url="http://localhost:9002",
-                           auth_domain="googleapis.com", scopes=["calendar.events.read"])
+def weather_config():
+    return MCPServerConfig(name="weather", url="",
+                           auth_domain="api.open-meteo.com", scopes=["weather:read"])
 
 
 @pytest.fixture
 def slack_config():
     return MCPServerConfig(name="slack", url="http://localhost:9003",
-                           auth_domain="slack.com", scopes=["chat.write"])
+                           auth_domain="slack.com", scopes=["slack:chat:write"])
 
 
 @pytest.mark.asyncio
-async def test_salesforce_mcp(sf_config):
-    client = SalesforceMCPClient(sf_config)
+async def test_weather_mcp(weather_config):
+    client = WeatherMCPClient(weather_config)
     result = await client.call(token="test-token-placeholder")
-    assert result["tool"] == "salesforce.contacts.list"
-
-
-@pytest.mark.asyncio
-async def test_gcal_mcp(gcal_config):
-    client = GCalMCPClient(gcal_config)
-    result = await client.call(token="test-token-placeholder")
-    assert result["tool"] == "gcal.events.list"
+    assert result["tool"] == "weather.get_current"
+    assert result["result"]["location"] == "Austin, TX"
+    assert result["result"]["temperature"] == 72
 
 
 @pytest.mark.asyncio

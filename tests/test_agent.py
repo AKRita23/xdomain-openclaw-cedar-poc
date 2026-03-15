@@ -26,7 +26,7 @@ async def test_execute_task(agent):
     assert "task_id" in result
     assert "delegation_chain" in result
     assert "results" in result
-    assert set(result["results"].keys()) == {"salesforce", "gcal", "slack"}
+    assert set(result["results"].keys()) == {"weather", "slack"}
 
 
 def test_task_context_delegation():
@@ -37,10 +37,10 @@ def test_task_context_delegation():
     )
     ctx.add_delegation(
         delegator="test-agent",
-        delegatee="salesforce",
-        auth_domain="salesforce.com",
-        scopes=["contacts.read"],
+        delegatee="weather",
+        auth_domain="api.open-meteo.com",
+        scopes=["weather:read"],
     )
     chain = ctx.get_chain_summary()
     assert len(chain) == 1
-    assert chain[0]["domain"] == "salesforce.com"
+    assert chain[0]["domain"] == "api.open-meteo.com"
