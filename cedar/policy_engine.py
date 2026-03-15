@@ -35,6 +35,10 @@ class CedarPolicyEngine:
             aws_region=aws_region,
         )
 
+    VALID_TASKS = frozenset({
+        "weather_slack_notification",
+    })
+
     async def authorize(
         self,
         principal_id: str,
@@ -48,7 +52,9 @@ class CedarPolicyEngine:
         """
         Evaluate Cedar policy for an MCP tool call.
 
+        Validates all inputs before constructing Cedar context.
         Raises CedarPolicyDenied if the policy denies the action.
+        Raises ValueError if required inputs are missing or invalid.
 
         Cedar entity mapping:
           - Principal: Agent::{principal_id}
@@ -56,6 +62,21 @@ class CedarPolicyEngine:
           - Resource: MCPServer::{resource_domain}
           - Context: scopes, badge_id, delegating_user, badge_valid, task
         """
+        if not principal_id:
+            raise ValueError("principal_id is required")
+        if not action:
+            raise ValueError("action is required")
+        if not resource_domain:
+            raise ValueError("resource_domain is required")
+        if not badge or not badge.get("badge_id"):
+            raise ValueError("badge with badge_id is required")
+        if not delegating_user:
+            raise ValueError("delegating_user is required")
+        if not task:
+            raise ValueError("task is required for Cedar policy evaluation")
+        if task not in self.VALID_TASKS:
+            raise ValueError(f"task '{task}' is not in the allowed task list")
+
         principal = {
             "entityType": "XDomainTBAC::Agent",
             "entityId": principal_id,

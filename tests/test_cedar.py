@@ -34,6 +34,76 @@ async def test_authorize_allows_valid_request(engine):
 
 
 @pytest.mark.asyncio
+async def test_authorize_rejects_missing_principal(engine):
+    with pytest.raises(ValueError, match="principal_id"):
+        await engine.authorize(
+            principal_id="",
+            action="weather.access",
+            resource_domain="api.open-meteo.com",
+            scopes=["weather:read"],
+            badge=_make_badge(),
+            delegating_user="sarah@example.com",
+            task="weather_slack_notification",
+        )
+
+
+@pytest.mark.asyncio
+async def test_authorize_rejects_missing_badge(engine):
+    with pytest.raises(ValueError, match="badge"):
+        await engine.authorize(
+            principal_id="test-agent",
+            action="weather.access",
+            resource_domain="api.open-meteo.com",
+            scopes=["weather:read"],
+            badge={},
+            delegating_user="sarah@example.com",
+            task="weather_slack_notification",
+        )
+
+
+@pytest.mark.asyncio
+async def test_authorize_rejects_missing_task(engine):
+    with pytest.raises(ValueError, match="task is required"):
+        await engine.authorize(
+            principal_id="test-agent",
+            action="weather.access",
+            resource_domain="api.open-meteo.com",
+            scopes=["weather:read"],
+            badge=_make_badge(),
+            delegating_user="sarah@example.com",
+            task="",
+        )
+
+
+@pytest.mark.asyncio
+async def test_authorize_rejects_invalid_task(engine):
+    with pytest.raises(ValueError, match="not in the allowed task list"):
+        await engine.authorize(
+            principal_id="test-agent",
+            action="weather.access",
+            resource_domain="api.open-meteo.com",
+            scopes=["weather:read"],
+            badge=_make_badge(),
+            delegating_user="sarah@example.com",
+            task="evil_data_exfil",
+        )
+
+
+@pytest.mark.asyncio
+async def test_authorize_rejects_missing_delegating_user(engine):
+    with pytest.raises(ValueError, match="delegating_user"):
+        await engine.authorize(
+            principal_id="test-agent",
+            action="weather.access",
+            resource_domain="api.open-meteo.com",
+            scopes=["weather:read"],
+            badge=_make_badge(),
+            delegating_user="",
+            task="weather_slack_notification",
+        )
+
+
+@pytest.mark.asyncio
 async def test_avp_result_allow():
     result = AVPAuthorizationResult(decision="ALLOW", reasons=["policy-1"])
     assert result.is_allowed is True

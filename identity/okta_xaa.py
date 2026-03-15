@@ -8,7 +8,20 @@ then exchanges it (with AGNTCY badge as actor proof) for a scoped access token.
 import logging
 from typing import Any, Dict, List, Optional
 
+import jwt
+
 logger = logging.getLogger(__name__)
+
+
+class TokenExchangeError(Exception):
+    """Raised when token exchange fails."""
+
+    def __init__(self, reason: str, status_code: Optional[int] = None,
+                 details: Optional[Dict[str, Any]] = None):
+        super().__init__(reason)
+        self.reason = reason
+        self.status_code = status_code
+        self.details = details or {}
 
 
 class OktaXAAClient:
@@ -54,15 +67,64 @@ class OktaXAAClient:
         2. Exchange ID-JAG + badge JWT for scoped access token
 
         Returns token response with access_token, token_type, expires_in, scope.
+
+        Raises:
+            TokenExchangeError: If token exchange fails or validation fails
         """
         # TODO: Replace with real HTTP calls to Okta
         logger.info(
             "ID-JAG exchange: endpoint=%s audience=%s scopes=%s",
             self.token_endpoint, target_audience, scopes,
         )
-        return {
+        result = {
             "access_token": f"id-jag-placeholder-{target_audience}",
             "token_type": "Bearer",
             "expires_in": 3600,
             "scope": " ".join(scopes) if scopes else "",
         }
+        self._validate_token_response(result, target_audience)
+        return result
+
+    @staticmethod
+    def _validate_token_response(
+        token_response: Dict[str, Any],
+        expected_audience: str,
+    ) -> None:
+        """
+        Validate the token response.
+
+        Checks:
+          - expires_in is present and positive
+          - access_token is present and non-empty
+
+        Raises TokenExchangeError if validation fails.
+        """
+        access_token = token_response.get("access_token", "")
+        if not access_token:
+            raise TokenExchangeError(reason="Token response missing access_token")
+
+        expires_in = token_response.get("expires_in")
+        if expires_in is None or expires_in <= 0:
+            raise TokenExchangeError(
+                reason="Token response has invalid or missing expires_in"
+            )
+
+        # Attempt to decode the access token (without verification) to check
+        # audience claim. Okta access tokens are JWTs with an aud claim.
+        try:
+            unverified = jwt.decode(
+                access_token,
+                options={"verify_signature": False},
+                algorithms=["RS256", "ES256"],
+            )
+            token_aud = unverified.get("aud")
+            if token_aud and token_aud != expected_audience:
+                raise TokenExchangeError(
+                    reason=(
+                        f"Token audience mismatch: "
+                        f"expected '{expected_audience}', got '{token_aud}'"
+                    )
+                )
+        except jwt.DecodeError:
+            # Opaque tokens don't have decodable claims — skip aud check
+            logger.info("Token is opaque (non-JWT), skipping audience validation")
