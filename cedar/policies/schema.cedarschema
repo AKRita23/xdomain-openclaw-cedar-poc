@@ -27,6 +27,7 @@ namespace XDomainTBAC {
             "scopes": Set<String>,
             "badge_id": String,
             "delegating_user": String,
+            "task": String,
         }
     };
 
@@ -38,6 +39,7 @@ namespace XDomainTBAC {
             "scopes": Set<String>,
             "badge_id": String,
             "delegating_user": String,
+            "task": String,
         }
     };
 
@@ -49,6 +51,7 @@ namespace XDomainTBAC {
             "scopes": Set<String>,
             "badge_id": String,
             "delegating_user": String,
+            "task": String,
         }
     };
 }

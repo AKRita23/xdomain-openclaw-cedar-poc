@@ -23,10 +23,22 @@ class AgentConfig:
     identity_service_url: str = os.getenv("AGNTCY_IDENTITY_SERVICE_URL", "http://localhost:8080")
     issuer_did: str = os.getenv("AGNTCY_ISSUER_DID", "")
 
-    # Okta XAA (RFC 8693 Token Exchange)
+    # AGNTCY Badge
+    agntcy_badge_well_known: str = os.getenv("AGNTCY_BADGE_WELL_KNOWN", "")
+    agntcy_badge_id: str = os.getenv("AGNTCY_BADGE_ID", "")
+    agntcy_metadata_id: str = os.getenv("AGNTCY_METADATA_ID", "")
+
+    # AWS
+    aws_secrets_region: str = os.getenv("AWS_REGION", "us-east-1")
+
+    # Okta XAA (ID-JAG)
     okta_domain: str = os.getenv("OKTA_DOMAIN", "")
     okta_client_id: str = os.getenv("OKTA_CLIENT_ID", "")
     okta_client_secret: str = os.getenv("OKTA_CLIENT_SECRET", "")
+    okta_audience: str = os.getenv("OKTA_AUDIENCE", "")
+    okta_auth_server_id: str = os.getenv("OKTA_AUTH_SERVER_ID", "default")
+    okta_token_endpoint: str = os.getenv("OKTA_TOKEN_ENDPOINT", "")
+    okta_issuer: str = os.getenv("OKTA_ISSUER", "")
 
     # Amazon Verified Permissions
     avp_policy_store_id: str = os.getenv("AVP_POLICY_STORE_ID", "")

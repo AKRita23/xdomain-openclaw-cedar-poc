@@ -18,7 +18,7 @@
 │                                                                     │
 │  ┌──────────────┐  ┌──────────────────┐  ┌───────────────────────┐ │
 │  │ AGNTCY Badge │  │  Okta XAA        │  │ Cedar Policy Engine  │ │
-│  │ (Identity)   │  │  (RFC 8693)      │  │ (Amazon Verified     │ │
+│  │ (Identity)   │  │  (ID-JAG)        │  │ (Amazon Verified     │ │
 │  │              │  │                  │  │  Permissions)         │ │
 │  └──────┬───────┘  └────────┬─────────┘  └──────────┬────────────┘ │
 └─────────┼───────────────────┼───────────────────────┼──────────────┘
@@ -41,10 +41,10 @@
 - Badge contains: agent_id, delegating user, issuer DID, signed JWT
 - Badge proves the agent is authorized to act on Sarah's behalf
 
-### 2. Okta XAA Token Exchange (RFC 8693)
-- Agent exchanges its badge JWT for domain-specific access tokens
+### 2. Okta XAA — Identity Assertion Authorization Grant (ID-JAG)
+- Agent uses Okta's ID-JAG flow to obtain identity assertions, then exchanges them (with AGNTCY badge as actor proof) for scoped access tokens
 - Each target domain (Open-Meteo, Slack) receives a scoped token
-- Implements OAuth 2.0 Token Exchange (`urn:ietf:params:oauth:grant-type:token-exchange`)
+- All credentials loaded from AWS Secrets Manager at runtime.
 
 ### 3. Cedar Policy Engine (Amazon Verified Permissions)
 - Cedar policies define fine-grained TBAC rules per domain
@@ -85,7 +85,8 @@ namespace XDomainTBAC {
 ├── identity/                 # AGNTCY Identity layer
 │   ├── badge_issuer.py       # Badge issuance
 │   ├── badge_verifier.py     # Badge verification
-│   └── okta_xaa.py           # Okta XAA token exchange
+│   ├── okta_xaa.py           # Okta XAA token exchange
+│   └── secrets.py            # AWS Secrets Manager helpers
 ├── cedar/                    # Cedar policy engine
 │   ├── avp_client.py         # Amazon Verified Permissions client
 │   ├── policy_engine.py      # Policy evaluation engine
@@ -108,7 +109,7 @@ namespace XDomainTBAC {
 ### Prerequisites
 - Python 3.9+
 - Docker & Docker Compose (optional, for full stack)
-- Okta developer account (for XAA token exchange)
+- Okta developer account (for XAA ID-JAG token exchange)
 - AWS account with Amazon Verified Permissions (for Cedar policy evaluation)
 - AGNTCY Identity Service instance
 
@@ -154,10 +155,12 @@ docker-compose run openclaw-agent pytest tests/ -v
 1. **Sarah** delegates a task to the OpenClaw agent
 2. **Agent** requests an identity badge from AGNTCY Identity Service
 3. For each MCP server (Weather, Slack):
-   - **Agent** exchanges badge JWT for domain-specific token via Okta XAA
+   - **Agent** obtains an Identity Assertion JWT via Okta ID-JAG flow, then exchanges it (with AGNTCY badge as actor proof) for a domain-specific scoped access token
    - **Cedar policy engine** evaluates TBAC authorization via AVP
    - **MCP server** receives the scoped token and executes the tool call
 4. **Agent** aggregates results and returns them to Sarah
+
+All credentials loaded from AWS Secrets Manager at runtime.
 
 ## Delegation Chain Example
 
