@@ -29,6 +29,7 @@ async def test_authorize_allows_valid_request(engine):
         scopes=["weather:read"],
         badge=_make_badge(),
         delegating_user="sarah@example.com",
+        task="weather_slack_notification",
     )
 
 

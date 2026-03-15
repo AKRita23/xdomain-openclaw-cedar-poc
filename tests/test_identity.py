@@ -40,3 +40,10 @@ async def test_verify_valid_badge(verifier):
 async def test_verify_invalid_badge(verifier):
     result = await verifier.verify_badge({})
     assert result["valid"] is False
+
+
+def test_load_secret_fallback():
+    """When boto3 is unavailable or secret not found, returns empty dict."""
+    from identity.secrets import load_secret
+    result = load_secret("nonexistent-secret")
+    assert result == {}

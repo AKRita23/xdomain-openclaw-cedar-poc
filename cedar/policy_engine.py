@@ -43,6 +43,7 @@ class CedarPolicyEngine:
         scopes: List[str],
         badge: Dict[str, Any],
         delegating_user: str,
+        task: str = "",
     ) -> None:
         """
         Evaluate Cedar policy for an MCP tool call.
@@ -53,7 +54,7 @@ class CedarPolicyEngine:
           - Principal: Agent::{principal_id}
           - Action: Action::{action}
           - Resource: MCPServer::{resource_domain}
-          - Context: scopes, badge_id, delegating_user, badge_valid
+          - Context: scopes, badge_id, delegating_user, badge_valid, task
         """
         principal = {
             "entityType": "XDomainTBAC::Agent",
@@ -72,6 +73,7 @@ class CedarPolicyEngine:
             "badge_id": badge.get("badge_id", ""),
             "delegating_user": delegating_user,
             "badge_valid": bool(badge.get("jwt")),
+            "task": task,
         }
 
         result = await self.avp_client.is_authorized(
