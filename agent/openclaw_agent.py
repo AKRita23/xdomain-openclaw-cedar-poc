@@ -56,6 +56,7 @@ class OpenClawAgent:
             slack_auth_server_id=self.config.slack_auth_server_id,
             weather_audience=self.config.weather_audience,
             slack_audience=self.config.slack_audience,
+            aws_region=self.config.aws_region,
         )
         self.policy_engine = CedarPolicyEngine(
             policy_store_id=self.config.avp_policy_store_id,
