@@ -49,6 +49,13 @@ class OpenClawAgent:
             audience=self.config.okta_audience,
             token_endpoint=self.config.okta_token_endpoint,
             issuer=self.config.okta_issuer,
+            org2_domain=self.config.org2_domain,
+            resource_app_client_id=self.config.resource_app_client_id,
+            resource_app_client_secret=self.config.resource_app_client_secret,
+            weather_auth_server_id=self.config.weather_auth_server_id,
+            slack_auth_server_id=self.config.slack_auth_server_id,
+            weather_audience=self.config.weather_audience,
+            slack_audience=self.config.slack_audience,
         )
         self.policy_engine = CedarPolicyEngine(
             policy_store_id=self.config.avp_policy_store_id,

@@ -40,6 +40,15 @@ class AgentConfig:
     okta_token_endpoint: str = os.getenv("OKTA_TOKEN_ENDPOINT", "")
     okta_issuer: str = os.getenv("OKTA_ISSUER", "")
 
+    # Okta Org 2 (resource domain)
+    org2_domain: str = os.getenv("ORG2_DOMAIN", "")
+    resource_app_client_id: str = os.getenv("RESOURCE_APP_CLIENT_ID", "")
+    resource_app_client_secret: str = os.getenv("RESOURCE_APP_CLIENT_SECRET", "")
+    weather_auth_server_id: str = os.getenv("WEATHER_AUTH_SERVER_ID", "ausdd5y4ggr6tY0ou0x7")
+    slack_auth_server_id: str = os.getenv("SLACK_AUTH_SERVER_ID", "ausdd60bugz7WGnnE0x7")
+    weather_audience: str = os.getenv("WEATHER_AUDIENCE", "https://weather.agentex.io")
+    slack_audience: str = os.getenv("SLACK_AUDIENCE", "https://slack.agentex.io")
+
     # Amazon Verified Permissions
     avp_policy_store_id: str = os.getenv("AVP_POLICY_STORE_ID", "")
     aws_region: str = os.getenv("AWS_REGION", "us-east-1")

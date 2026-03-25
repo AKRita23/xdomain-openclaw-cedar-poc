@@ -24,6 +24,13 @@ def xaa_client():
         client_id="test-client-id",
         client_secret="test-client-secret",
         auth_server_id="default",
+        org2_domain="dev-test-org2.okta.com",
+        resource_app_client_id="resource-client-id",
+        resource_app_client_secret="resource-client-secret",
+        weather_auth_server_id="aus-weather-test",
+        slack_auth_server_id="aus-slack-test",
+        weather_audience="https://weather.agentex.io",
+        slack_audience="https://slack.agentex.io",
     )
 
 
