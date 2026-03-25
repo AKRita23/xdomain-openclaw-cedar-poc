@@ -49,6 +49,9 @@ class AgentConfig:
     weather_audience: str = os.getenv("WEATHER_AUDIENCE", "https://weather.agentex.io")
     slack_audience: str = os.getenv("SLACK_AUDIENCE", "https://slack.agentex.io")
 
+    # Sarah's pre-obtained token (AWS Secrets Manager)
+    sarah_token_secret_id: str = "xdomain-agent-poc/sarah-token"
+
     # Amazon Verified Permissions
     avp_policy_store_id: str = os.getenv("AVP_POLICY_STORE_ID", "")
     aws_region: str = os.getenv("AWS_REGION", "us-east-1")

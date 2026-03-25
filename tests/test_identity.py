@@ -31,6 +31,7 @@ def xaa_client():
         slack_auth_server_id="aus-slack-test",
         weather_audience="https://weather.agentex.io",
         slack_audience="https://slack.agentex.io",
+        aws_region="us-east-1",
     )
 
 

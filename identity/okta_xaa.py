@@ -2,12 +2,15 @@
 Okta XAA — Identity Assertion Authorization Grant (ID-JAG).
 
 Implements the Okta ID-JAG flow to obtain domain-specific access tokens
-for cross-domain delegation. The agent obtains an Identity Assertion JWT,
-then exchanges it (with AGNTCY badge as actor proof) for a scoped access token.
+for cross-domain delegation. The agent loads Sarah's pre-obtained token
+from AWS Secrets Manager, then exchanges it for a scoped access token
+at the resource domain (Org 2).
 """
+import json
 import logging
 from typing import Any, Dict, List, Optional, Tuple
 
+import boto3
 import httpx
 import jwt
 
@@ -35,6 +38,8 @@ class OktaXAAClient:
 
     TOKEN_EXCHANGE_GRANT = "urn:ietf:params:oauth:grant-type:token-exchange"
 
+    SARAH_TOKEN_SECRET_ID = "xdomain-agent-poc/sarah-token"
+
     # Map scopes to resource domain targets
     SCOPE_TO_RESOURCE = {
         "weather:read": "weather",
@@ -58,6 +63,7 @@ class OktaXAAClient:
         slack_auth_server_id: str = "",
         weather_audience: str = "",
         slack_audience: str = "",
+        aws_region: str = "us-east-1",
     ):
         self.domain = domain
         self.client_id = client_id
@@ -77,6 +83,7 @@ class OktaXAAClient:
         self.slack_auth_server_id = slack_auth_server_id
         self.weather_audience = weather_audience
         self.slack_audience = slack_audience
+        self.aws_region = aws_region
 
     def _resolve_org2_target(
         self, target_audience: str, scopes: Optional[List[str]],
@@ -101,6 +108,34 @@ class OktaXAAClient:
                    f"and scopes {scopes}"
         )
 
+    def load_sarah_token(self) -> str:
+        """Load Sarah's pre-obtained access token from AWS Secrets Manager.
+
+        Returns the access_token string.
+
+        Raises:
+            TokenExchangeError: If the secret cannot be fetched or parsed.
+        """
+        try:
+            sm = boto3.client("secretsmanager", region_name=self.aws_region)
+            resp = sm.get_secret_value(SecretId=self.SARAH_TOKEN_SECRET_ID)
+            secret = json.loads(resp["SecretString"])
+            token = secret.get("access_token")
+            if not token:
+                raise TokenExchangeError(
+                    reason="Secret missing 'access_token' field",
+                    details={"secret_id": self.SARAH_TOKEN_SECRET_ID},
+                )
+            logger.info("Loaded Sarah's token from Secrets Manager")
+            return token
+        except TokenExchangeError:
+            raise
+        except Exception as exc:
+            raise TokenExchangeError(
+                reason=f"Failed to load Sarah's token from Secrets Manager: {exc}",
+                details={"secret_id": self.SARAH_TOKEN_SECRET_ID},
+            ) from exc
+
     async def exchange_token(
         self,
         subject_token: str,
@@ -109,10 +144,10 @@ class OktaXAAClient:
         badge_jwt: Optional[str] = None,
     ) -> Dict[str, Any]:
         """
-        Perform two-org Okta ID-JAG token exchange.
+        Perform token exchange using Sarah's pre-obtained token.
 
-        Step 1: Get ID-JAG assertion from Org 1 (agent's domain)
-        Step 2: Exchange ID-JAG for scoped access token from Org 2 (resource domain)
+        Step 1: Load Sarah's access token from AWS Secrets Manager
+        Step 2: Exchange it at Org 2 for a scoped access token
 
         Returns token response with access_token, token_type, expires_in, scope.
 
@@ -123,68 +158,39 @@ class OktaXAAClient:
             target_audience, scopes,
         )
 
+        # Step 1 — Load Sarah's token from Secrets Manager
+        sarah_token = self.load_sarah_token()
+
+        # Step 2 — Exchange Sarah's token at Org 2
+        org2_token_endpoint = (
+            f"https://{self.org2_domain}/oauth2/{org2_auth_server_id}/v1/token"
+        )
+        logger.info(
+            "Exchanging Sarah's token at Org 2: %s audience=%s scopes=%s",
+            org2_token_endpoint, resolved_audience, scopes,
+        )
+        exchange_data = {
+            "grant_type": self.TOKEN_EXCHANGE_GRANT,
+            "client_id": self.resource_app_client_id,
+            "client_secret": self.resource_app_client_secret,
+            "subject_token": sarah_token,
+            "subject_token_type": self.ACCESS_TOKEN_TYPE,
+            "audience": resolved_audience,
+            "scope": " ".join(scopes) if scopes else "",
+        }
+
         async with httpx.AsyncClient() as client:
-            # Step 1 — Get ID-JAG assertion from Org 1
-            logger.info(
-                "Step 1: Requesting ID-JAG assertion from Org 1: %s",
-                self.token_endpoint,
-            )
-            step1_data = {
-                "grant_type": self.ID_JAG_GRANT,
-                "client_id": self.client_id,
-                "client_secret": self.client_secret,
-                "scope": "openid",
-            }
-            step1_resp = await client.post(
-                self.token_endpoint,
-                data=step1_data,
-            )
-            if step1_resp.status_code != 200:
-                raise TokenExchangeError(
-                    reason=f"Step 1 failed: ID-JAG assertion request returned {step1_resp.status_code}",
-                    status_code=step1_resp.status_code,
-                    details=step1_resp.json() if step1_resp.headers.get("content-type", "").startswith("application/json") else {"body": step1_resp.text},
-                )
+            resp = await client.post(org2_token_endpoint, data=exchange_data)
 
-            step1_body = step1_resp.json()
-            id_jag_token = step1_body.get("id_jag_token") or step1_body.get("access_token")
-            if not id_jag_token:
-                raise TokenExchangeError(
-                    reason="Step 1 response missing id_jag_token and access_token",
-                    details=step1_body,
-                )
-            logger.info("Step 1 complete: obtained ID-JAG assertion")
+        if resp.status_code != 200:
+            raise TokenExchangeError(
+                reason=f"Token exchange failed: Org 2 returned {resp.status_code}",
+                status_code=resp.status_code,
+                details=resp.json() if resp.headers.get("content-type", "").startswith("application/json") else {"body": resp.text},
+            )
 
-            # Step 2 — Exchange ID-JAG for scoped token from Org 2
-            org2_token_endpoint = (
-                f"https://{self.org2_domain}/oauth2/{org2_auth_server_id}/v1/token"
-            )
-            logger.info(
-                "Step 2: Exchanging ID-JAG at Org 2: %s audience=%s scopes=%s",
-                org2_token_endpoint, resolved_audience, scopes,
-            )
-            step2_data = {
-                "grant_type": self.TOKEN_EXCHANGE_GRANT,
-                "client_id": self.resource_app_client_id,
-                "client_secret": self.resource_app_client_secret,
-                "subject_token": id_jag_token,
-                "subject_token_type": self.JWT_TOKEN_TYPE,
-                "audience": resolved_audience,
-                "scope": " ".join(scopes) if scopes else "",
-            }
-            step2_resp = await client.post(
-                org2_token_endpoint,
-                data=step2_data,
-            )
-            if step2_resp.status_code != 200:
-                raise TokenExchangeError(
-                    reason=f"Step 2 failed: token exchange returned {step2_resp.status_code}",
-                    status_code=step2_resp.status_code,
-                    details=step2_resp.json() if step2_resp.headers.get("content-type", "").startswith("application/json") else {"body": step2_resp.text},
-                )
-
-            result = step2_resp.json()
-            logger.info("Step 2 complete: obtained scoped access token")
+        result = resp.json()
+        logger.info("Token exchange complete: obtained scoped access token")
 
         self._validate_token_response(result, resolved_audience)
         return result
